@@ -1,0 +1,4 @@
+dist
+node_modules
+samconfig.toml
+packaged.yml

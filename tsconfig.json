@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES2018",
+    "lib": ["ES2018"],
+    "module": "commonjs",
+    "allowJs": true,
+    "noEmit": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noUnusedLocals": true,
+    "resolveJsonModule": true
+  },
+  "include": ["lambda/**/*.js", "cli/**/*.js", "shared/**/*.js"],
+  "exclude": ["dist/**/*", "lambda/dist/**/*"]
+}

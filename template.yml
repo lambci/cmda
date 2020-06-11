@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Metadata:
+  AWS::ServerlessRepo::Application:
+    Name: cmda
+    Description: A Lambda function to support the cmda tool
+    Author: LambCI
+    SpdxLicenseId: MIT
+    LicenseUrl: LICENSE
+    ReadmeUrl: README-SAR.md
+    Labels: ['lambda', 'filesystem']
+    HomePageUrl: https://github.com/lambci/cmda
+    SemanticVersion: 0.9.1
+    SourceCodeUrl: https://github.com/lambci/cmda/tree/v0.9.1
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: VPC Configuration (optional)
+        Parameters:
+          - VpcSubnetIds
+          - VpcSecurityGroupIds
+    ParameterLabels:
+      VpcSubnetIds:
+        default: VPC Subnet ID(s)
+      VpcSecurityGroupIds:
+        default: VPC Security Group ID(s)
+
+Parameters:
+  VpcSubnetIds:
+    Type: CommaDelimitedList
+    Description: Comma-separated list of VPC subnet IDs
+    Default: ''
+  VpcSecurityGroupIds:
+    Type: CommaDelimitedList
+    Description: Comma-separated list of VPC security group IDs
+    Default: ''
+
+Conditions:
+  AddVpcConfig:
+    Fn::And:
+      - Fn::Not: [Fn::Equals: ['', Fn::Join: ['', !Ref VpcSubnetIds]]]
+      - Fn::Not: [Fn::Equals: ['', Fn::Join: ['', !Ref VpcSecurityGroupIds]]]
+
+Resources:
+
+  CmdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: nodejs12.x
+      CodeUri: lambda/dist
+      Handler: index.handler
+      MemorySize: 3008
+      Timeout: 900
+      ReservedConcurrentExecutions: 1
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref CmdaBucket
+      Environment:
+        Variables:
+          CMDA_BUCKET: !Ref CmdaBucket
+      VpcConfig:
+        Fn::If:
+          - AddVpcConfig
+          - SubnetIds: !Ref VpcSubnetIds
+            SecurityGroupIds: !Ref VpcSecurityGroupIds
+          - !Ref AWS::NoValue
+
+  CmdaBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      LifecycleConfiguration:
+        Rules:
+          - ExpirationInDays: 1
+            Status: Enabled
+
+Outputs:
+  FunctionName:
+    Description: The name of the cmda Lambda function
+    Value: !Ref CmdaFunction
