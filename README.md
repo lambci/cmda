@@ -1,20 +1,21 @@
 # cmda
 
-`cmda` (think: commander) is a CLI tool that can execute remote commands, including file copying,
+`cmda` (think: commander) is a CLI tool that can execute remote commands, including uploading local files/directories,
 on an [AWS Lambda](https://aws.amazon.com/lambda/) function.
 
-For example, here's how to copy local files to/from a Lambda instance:
+For example, here's how to run commands and copy local files to/from a Lambda instance:
 
 ```console
 $ cmda mkdir /tmp/somedir
 
-$ cmda upload ./mylocalfile.txt /tmp/somedir/
+$ cmda upload ./mylocalfile.txt ./mylocaldir /tmp/somedir/
 
 $ cmda ls -l /tmp/somedir
 total 12
+drwxrwxr-x 2 sbx_user1051 495  4096 Jun 11 18:40 mylocaldir
 -rw-r--r-- 1 sbx_user1051 495 10454 Jun 11 18:40 mylocalfile.txt
 
-$ cmda exec bash -c 'echo hello > /tmp/someremotefile.txt'
+$ cmda sh -c 'echo hello > /tmp/someremotefile.txt'
 
 $ cmda download /tmp/someremotefile.txt ./
 ```
@@ -42,7 +43,7 @@ You'll also need a Lambda function that understands `cmda`'s commands. You can d
 You can optionally enter VPC details (like a security group and subnets) to have the function launch in an existing VPC when you create the application.
 
 After the application has been deployed, you'll need the full name of the Lambda function it created, to configure `cmda`.
-You can get this by clicking on the `CmdaFunction` Resource in the Resources list, or by looking at the CloudFormation Stack's outputs where it's called `FunctionName`.
+You can get this by clicking on the `CmdaFunction` Resource in the Resources list, or by looking at the CloudFormation Stack's outputs for `FunctionName`.
 
 It will look something like: `serverlessrepo-cmda-CmdaFunction-12Q3L4R5I6O76`
 
@@ -103,9 +104,9 @@ Options:
 --version            Display command line version
 
 Commands:
-info                          Info about the cmda Lambda function and configured S3 bucket
-exec <cmd> <opts>             Execute <cmd> <options> remotely on Lambda, eg 'exec ls -la'
-upload <file1, ...> <dest>    Upload local files to <dest> on the Lambda filesystem (shortcut: ul)
-download <file1, ...> <dest>  Download files from the Lambda filesystem to local <dest> (shortcut: dl)
-cp|mv|rm|mkdir|ls|cat|touch   Shortcuts for 'exec <cmd>' above
+info                            Info about the cmda Lambda function and configured S3 bucket
+exec <cmd> <opts>               Execute <cmd> <options> remotely on Lambda, eg 'exec ls -la'
+upload <file1, ...> <dest>      Upload local files to <dest> on the Lambda filesystem (shortcut: ul)
+download <file1, ...> <dest>    Download files from the Lambda filesystem to local <dest> (shortcut: dl)
+cp|mv|rm|mkdir|ls|cat|touch|sh  Shortcuts for 'exec <cmd>' above
 ```

@@ -6,7 +6,7 @@ const { cachedProviderChain, getProfileFromIniFiles } = require('./aws')
 const { info, exec, upload, download } = require('./actions')
 const { version } = require('../package.json')
 
-const EXEC_SHORTCUTS = new Set(['cp', 'mv', 'rm', 'mkdir', 'ls', 'cat', 'touch'])
+const EXEC_SHORTCUTS = new Set(['cp', 'mv', 'rm', 'mkdir', 'ls', 'cat', 'touch', 'sh'])
 const ALL_CMDS = new Set(['info', 'exec', 'ul', 'upload', 'dl', 'download', ...EXEC_SHORTCUTS])
 
 run().catch(errorAndExit)
@@ -46,11 +46,11 @@ Options:
 --version            Display command line version
 
 Commands:
-info                          Info about the cmda Lambda function and configured S3 bucket
-exec <cmd> <opts>             Execute <cmd> <options> remotely on Lambda, eg 'exec ls -la'
-upload <file1, ...> <dest>    Upload local files to <dest> on the Lambda filesystem (shortcut: ul)
-download <file1, ...> <dest>  Download files from the Lambda filesystem to local <dest> (shortcut: dl)
-cp|mv|rm|mkdir|ls|cat|touch   Shortcuts for 'exec <cmd>' above
+info                            Info about the cmda Lambda function and configured S3 bucket
+exec <cmd> <opts>               Execute <cmd> <options> remotely on Lambda, eg 'exec ls -la'
+upload <file1, ...> <dest>      Upload local files to <dest> on the Lambda filesystem (shortcut: ul)
+download <file1, ...> <dest>    Download files from the Lambda filesystem to local <dest> (shortcut: dl)
+cp|mv|rm|mkdir|ls|cat|touch|sh  Shortcuts for 'exec <cmd>' above
 
 Report bugs at github.com/lambci/cmda/issues
 `)
