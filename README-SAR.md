@@ -5,14 +5,12 @@ A Lambda function to support the [`cmda` command line tool](https://github.com/l
 This tool allows you to execute remote commands, including uploading local files/directories,
 on an [AWS Lambda](https://aws.amazon.com/lambda/) function.
 
-For example, here's how to run commands and copy local files to/from a Lambda instance:
+For example, here's how to run commands and copy local files to/from `/tmp` on a Lambda instance:
 
 ```console
-$ cmda mkdir /tmp/somedir
+$ cmda upload ./mylocalfile.txt ./mylocaldir /tmp/
 
-$ cmda upload ./mylocalfile.txt ./mylocaldir /tmp/somedir/
-
-$ cmda ls -l /tmp/somedir
+$ cmda ls -l /tmp/
 total 12
 drwxrwxr-x 2 sbx_user1051 495  4096 Jun 11 18:40 mylocaldir
 -rw-r--r-- 1 sbx_user1051 495 10454 Jun 11 18:40 mylocalfile.txt
