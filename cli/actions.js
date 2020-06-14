@@ -59,18 +59,41 @@ exports.upload = async function ({ functionName, args: files, bucket }) {
 
   const dest = files.pop()
 
+  clearLineLog('Compressing local files...')
+
   const stream = strippedTarStream({ gzip: true }, files)
 
   const key = randomTgzName()
 
   const upload = new S3().upload({ Bucket: bucket, Key: key, Body: stream })
-  upload.on('httpUploadProgress', console.log)
 
-  const data = await upload.promise()
-  console.log(data)
+  let loaded = 0
+  let total
 
-  const payload = await invokeLambda(functionName, 'upload', { bucket, key, dest })
-  console.log(payload)
+  upload.on('httpUploadProgress', ({ loaded: eventLoaded, total: eventTotal }) => {
+    loaded = Math.max(loaded, eventLoaded)
+    if (total == null) {
+      total = eventTotal
+    }
+    clearLineLog(
+      `Uploaded ${prettySize(loaded)} of ${total == null ? '???' : prettySize(total)}...`
+    )
+  })
+
+  await upload.promise()
+  clearLineLog('Invoking Lambda to copy files remotely...')
+
+  try {
+    await invokeLambda(functionName, 'upload', { bucket, key, dest })
+  } catch (e) {
+    // XXX: need to figure out why this is happening
+    if (e.message === 'zlib: unexpected end of file') {
+      clearLineLog('Corrupt tarball, trying again...')
+      return exports.upload({ functionName, args: files.concat(dest), bucket })
+    }
+    throw e
+  }
+  clearLineLog('All files uploaded\n')
 }
 
 /**
@@ -79,15 +102,22 @@ exports.upload = async function ({ functionName, args: files, bucket }) {
 exports.download = async function ({ functionName, args: files, bucket: configBucket }) {
   const dest = files.pop()
 
+  clearLineLog('Invoking Lambda to package remote files...')
   const { bucket, key } = await invokeLambda(functionName, 'download', {
     bucket: configBucket,
     files,
   })
 
+  clearLineLog('Downloading from S3...')
+
   const srcStream = new S3().getObject({ Bucket: bucket, Key: key }).createReadStream()
   const destStream = tar.extract({ cwd: dest })
 
+  srcStream.on('end', () => clearLineLog('Unpacking locally...'))
+
   await pipePromise(srcStream, destStream)
+
+  clearLineLog('All files downloaded and unpacked\n')
 }
 
 /**
@@ -128,6 +158,7 @@ async function invokeLambda(functionName, action, options) {
  * @returns {Promise<string>}
  */
 async function getBucketFromLambda(functionName) {
+  clearLineLog('Getting S3 bucket name from Lambda...')
   const { bucket } = await invokeLambda(functionName, 'info')
   if (!bucket) {
     throw new Error(
@@ -135,4 +166,18 @@ async function getBucketFromLambda(functionName) {
     )
   }
   return bucket
+}
+
+const UNITS = ['B', 'kB', 'MB', 'GB']
+
+function prettySize(bytes) {
+  const exponent = Math.min(Math.floor(Math.log10(bytes) / 3), UNITS.length - 1)
+  return `${(bytes / 1000 ** exponent).toPrecision(3)} ${UNITS[exponent]}`
+}
+
+function clearLineLog(msg) {
+  if (process.stdout.isTTY) {
+    process.stdout.write('\u001B[2K\u001B[G')
+  }
+  process.stdout.write(msg)
 }
