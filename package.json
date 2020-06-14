@@ -1,6 +1,6 @@
 {
   "name": "cmda",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "description": "A command line tool for executing commands on, and copying files to/from AWS Lambda",
   "author": "Michael Hart <michael.hart.au@gmail.com> (https://github.com/mhart)",
   "license": "MIT",
