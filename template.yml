@@ -3,7 +3,7 @@ Transform: AWS::Serverless-2016-10-31
 Metadata:
   AWS::ServerlessRepo::Application:
     Name: cmda
-    Description: A Lambda function to support the cmda tool
+    Description: A Lambda stack to support the cmda command line tool
     Author: LambCI
     SpdxLicenseId: MIT
     LicenseUrl: LICENSE
@@ -21,18 +21,18 @@ Metadata:
           - VpcSecurityGroupIds
     ParameterLabels:
       VpcSubnetIds:
-        default: VPC Subnet ID(s)
+        default: Subnet IDs
       VpcSecurityGroupIds:
-        default: VPC Security Group ID(s)
+        default: Security Group ID(s)
 
 Parameters:
   VpcSubnetIds:
-    Type: CommaDelimitedList
-    Description: Comma-separated list of VPC subnet IDs
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: VPC Subnet IDs (typically you only want private subnets)
     Default: ''
   VpcSecurityGroupIds:
-    Type: CommaDelimitedList
-    Description: Comma-separated list of VPC security group IDs
+    Type: List<AWS::EC2::SecurityGroup::Id>
+    Description: VPC Security Group ID(s) (typically you only want one)
     Default: ''
 
 Conditions:

@@ -1,6 +1,6 @@
 # cmda
 
-A Lambda function to support the [`cmda` command line tool](https://github.com/lambci/cmda).
+A Lambda stack to support the [`cmda` command line tool](https://github.com/lambci/cmda).
 
 This tool allows you to execute remote commands, including uploading local files/directories,
 to an [AWS Lambda](https://aws.amazon.com/lambda/) function.
