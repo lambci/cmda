@@ -1,7 +1,7 @@
 # cmda
 
 `cmda` (think: commander) is a CLI tool that can execute remote commands, including uploading local files/directories,
-to an [AWS Lambda](https://aws.amazon.com/lambda/) function. Along with EFS for Lambda, this makes it an easy tool to move files to/from an EFS file system.
+to an [AWS Lambda](https://aws.amazon.com/lambda/) function. Along with EFS for Lambda, this makes it an easy tool to move files to/from an EFS file system that you might use with your other Lambda functions.
 
 For example, here's how to run commands and copy local files to/from a filesystem mounted at `/mnt/efs` on a Lambda instance:
 
