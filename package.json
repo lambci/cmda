@@ -1,7 +1,7 @@
 {
   "name": "cmda",
   "version": "0.9.4",
-  "description": "A command line tool for executing commands on, and copying files to/from AWS Lambda",
+  "description": "A command line tool for executing commands on, and copying files to/from AWS Lambda, especially useful with EFS",
   "author": "Michael Hart <michael.hart.au@gmail.com> (https://github.com/mhart)",
   "license": "MIT",
   "repository": "github:lambci/cmda",
@@ -23,7 +23,7 @@
   "devDependencies": {
     "@types/minimist": "^1.2.0",
     "@types/tar": "^4.0.3",
-    "aws-sdk": "^2.697.0",
+    "aws-sdk": "^2.698.0",
     "eslint": "^7.2.0",
     "eslint-config-prettier": "^6.11.0",
     "eslint-config-standard": "^14.1.1",

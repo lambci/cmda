@@ -3,12 +3,12 @@ Transform: AWS::Serverless-2016-10-31
 Metadata:
   AWS::ServerlessRepo::Application:
     Name: cmda
-    Description: A Lambda stack to support the cmda command line tool
+    Description: A Lambda stack to perform commands and copy to/from EFS
     Author: LambCI
     SpdxLicenseId: MIT
     LicenseUrl: LICENSE
     ReadmeUrl: README-SAR.md
-    Labels: ['lambda', 'filesystem']
+    Labels: ['lambda', 'filesystem', 'efs']
     HomePageUrl: https://github.com/lambci/cmda
     SemanticVersion: 0.9.4
     SourceCodeUrl: https://github.com/lambci/cmda/tree/v0.9.4
@@ -19,11 +19,17 @@ Metadata:
         Parameters:
           - VpcSubnetIds
           - VpcSecurityGroupIds
+          - EfsAccessPointId
+          - EfsMountPath
     ParameterLabels:
       VpcSubnetIds:
         default: Subnet IDs
       VpcSecurityGroupIds:
         default: Security Group ID(s)
+      EfsAccessPointId:
+        default: EFS Access Point ID
+      EfsMountPath:
+        default: EFS Local Mount Path
 
 Parameters:
   VpcSubnetIds:
@@ -34,12 +40,30 @@ Parameters:
     Type: List<AWS::EC2::SecurityGroup::Id>
     Description: VPC Security Group ID(s) (typically you only want one)
     Default: ''
+  EfsAccessPointId:
+    Type: String
+    Description: EFS Access Point ID (eg fsap-1234abcd - see "Manage client access" in the EFS web console)
+    AllowedPattern: '^$|^fsap-[0-9a-f]+$'
+    ConstraintDescription: Must start with fsap-
+    Default: ''
+  EfsMountPath:
+    Type: String
+    Description: Local mount path to use for the EFS filesystem (eg /mnt/efs)
+    AllowedPattern: '^$|^/mnt/.+$'
+    ConstraintDescription: Must start with /mnt/
+    Default: ''
 
 Conditions:
   AddVpcConfig:
-    Fn::And:
-      - Fn::Not: [Fn::Equals: ['', Fn::Join: ['', !Ref VpcSubnetIds]]]
-      - Fn::Not: [Fn::Equals: ['', Fn::Join: ['', !Ref VpcSecurityGroupIds]]]
+    !And
+      - !Not [!Equals ['', !Join ['', !Ref VpcSubnetIds]]]
+      - !Not [!Equals ['', !Join ['', !Ref VpcSecurityGroupIds]]]
+  AddEfsConfig:
+    !And
+      - !Not [!Equals ['', !Join ['', !Ref VpcSubnetIds]]]
+      - !Not [!Equals ['', !Join ['', !Ref VpcSecurityGroupIds]]]
+      - !Not [!Equals ['', !Ref EfsAccessPointId]]
+      - !Not [!Equals ['', !Ref EfsMountPath]]
 
 Resources:
 
@@ -51,7 +75,6 @@ Resources:
       Handler: index.handler
       MemorySize: 3008
       Timeout: 900
-      ReservedConcurrentExecutions: 1
       Policies:
         - S3CrudPolicy:
             BucketName: !Ref CmdaBucket
@@ -59,10 +82,17 @@ Resources:
         Variables:
           CMDA_BUCKET: !Ref CmdaBucket
       VpcConfig:
-        Fn::If:
+        !If
           - AddVpcConfig
           - SubnetIds: !Ref VpcSubnetIds
             SecurityGroupIds: !Ref VpcSecurityGroupIds
+          - !Ref AWS::NoValue
+      FileSystemConfigs:
+        !If
+          - AddEfsConfig
+          -
+            - Arn: !Sub 'arn:${AWS::Partition}:elasticfilesystem:${AWS::Region}:${AWS::AccountId}:access-point/${EfsAccessPointId}'
+              LocalMountPath: !Ref EfsMountPath
           - !Ref AWS::NoValue
 
   CmdaBucket:

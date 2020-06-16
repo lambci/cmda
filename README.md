@@ -1,22 +1,26 @@
 # cmda
 
 `cmda` (think: commander) is a CLI tool that can execute remote commands, including uploading local files/directories,
-to an [AWS Lambda](https://aws.amazon.com/lambda/) function.
+to an [AWS Lambda](https://aws.amazon.com/lambda/) function. Along with EFS for Lambda, this makes it an easy tool to move files to/from an EFS file system.
 
-For example, here's how to run commands and copy local files to/from `/tmp` on a Lambda instance:
+For example, here's how to run commands and copy local files to/from a filesystem mounted at `/mnt/efs` on a Lambda instance:
 
 ```console
-$ cmda upload ./mylocalfile.txt ./mylocaldir /tmp/
+$ cmda upload ./mylocalfile.txt ./mylocaldir /mnt/efs/
 
-$ cmda ls -l /tmp/
+$ cmda ls -l /mnt/efs/
 total 12
 drwxrwxr-x 2 sbx_user1051 495  4096 Jun 11 18:40 mylocaldir
 -rw-r--r-- 1 sbx_user1051 495 10454 Jun 11 18:40 mylocalfile.txt
 
-$ cmda sh -c 'echo hello > /tmp/someremotefile.txt'
+$ cmda sh -c 'echo hello > /mnt/efs/someremotefile.txt'
 
-$ cmda download /tmp/someremotefile.txt ./
+$ cmda mkdir /mnt/efs/someremotedir
+
+$ cmda download /mnt/efs/someremotefile.txt /mnt/efs/someremotedir ./
 ```
+
+`cmda` uses an S3 bucket as a staging area while it's uploading and downloading – the Lambda function and S3 bucket can be deployed easily using the installation instructions below.
 
 # Installation
 
@@ -35,10 +39,16 @@ npx cmda [args...]
 
 ## Lambda function
 
-You'll also need a Lambda function that understands `cmda`'s commands. You can deploy one from the
+You'll need a Lambda function that understands `cmda`'s commands. You can deploy one from the
 [`cmda` application in the Serverless Application Repository](https://serverlessrepo.aws.amazon.com/applications/arn:aws:serverlessrepo:us-east-1:553035198032:applications~cmda).
 
 You can optionally enter VPC details (like a security group and subnets) to have the function launch in an existing VPC when you create the application.
+
+You can also add EFS filesystem details if you want to copy to/from EFS – just enter the EFS Access Point ID
+(you can find this from "Manage client access" on your filesystem in the EFS web console, eg `fsap-1234abcd`) and
+local mount path you want (eg `/mnt/efs`) in the given prompts.
+
+![cmda setup](https://lambci.s3.amazonaws.com/assets/cmda_sar_config.png)
 
 After the application has been deployed, you'll need the name of the Lambda function it created, to configure `cmda`.
 You can get this by clicking on the `CmdaFunction` Resource in the Resources list, or by looking at the CloudFormation Stack's outputs for `FunctionName`.
