@@ -3,7 +3,7 @@
 const minimist = require('minimist')
 const AWS = require('aws-sdk/global')
 const { cachedProviderChain, getProfileFromIniFiles } = require('./aws')
-const { info, exec, upload, download } = require('./actions')
+const { info, exec, upload, download, clearLineLog } = require('./actions')
 const { version } = require('../package.json')
 
 const EXEC_SHORTCUTS = new Set(['cp', 'mv', 'rm', 'mkdir', 'ls', 'cat', 'touch', 'sh'])
@@ -124,6 +124,7 @@ function getConfig(cmdlineArgs) {
  * @param {Error & {code: string}} err
  */
 function errorAndExit({ code, message }) {
+  clearLineLog('')
   if (code === 'CredentialsError') {
     console.error(
       'Could not find valid AWS credentials. Try running the AWS CLI to refresh credentials and then try again:'

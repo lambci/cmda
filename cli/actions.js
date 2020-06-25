@@ -191,3 +191,5 @@ function clearLineLog(msg) {
   }
   process.stdout.write(msg)
 }
+
+exports.clearLineLog = clearLineLog
