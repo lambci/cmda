@@ -9,11 +9,13 @@ const { version } = require('../package.json')
 const EXEC_SHORTCUTS = new Set(['cp', 'mv', 'rm', 'mkdir', 'ls', 'cat', 'touch', 'sh'])
 const ALL_CMDS = new Set(['info', 'exec', 'ul', 'upload', 'dl', 'download', ...EXEC_SHORTCUTS])
 
+/** @type {{ action: string, functionName: string, args: string[], bucket?: string, verbose?: boolean }} */
+let config
+
 run().catch(errorAndExit)
 
 async function run() {
-  const config = getConfig(process.argv.slice(2))
-
+  config = getConfig(process.argv.slice(2))
   switch (config.action) {
     case 'help':
       return logHelp()
@@ -42,6 +44,7 @@ Options:
 --profile <profile>  AWS profile to use (default: AWS_PROFILE env or 'default')
 --function <fn>      Lambda function name (default: CMDA_FUNCTION env or cmda_function from AWS CLI config)
 --bucket <bucket>    S3 bucket to use for transfers (optional, will determine from Lambda if not given)
+--verbose            More verbose output, especially for errors
 --help               Display this help message
 --version            Display command line version
 
@@ -71,7 +74,7 @@ function getConfig(cmdlineArgs) {
   }
 
   const cmdlineFlags = minimist(cmdlineArgs.slice(0, actionIx), {
-    boolean: ['version', 'help'],
+    boolean: ['version', 'help', 'verbose'],
     alias: { function: 'function-name' },
     default: { profile: AWS_PROFILE || 'default', function: CMDA_FUNCTION, bucket: CMDA_BUCKET },
   })
@@ -92,7 +95,7 @@ function getConfig(cmdlineArgs) {
     action = 'exec'
   }
 
-  let { function: functionName, bucket, profile } = cmdlineFlags
+  let { function: functionName, bucket, profile, verbose } = cmdlineFlags
 
   process.env.AWS_SDK_LOAD_CONFIG = '1'
   if (profile) {
@@ -117,13 +120,14 @@ function getConfig(cmdlineArgs) {
     args,
     functionName,
     bucket,
+    verbose,
   }
 }
 
 /**
  * @param {Error & {code: string}} err
  */
-function errorAndExit({ code, message }) {
+function errorAndExit({ name, code, message, stack }) {
   clearLineLog('')
   if (code === 'CredentialsError') {
     console.error(
@@ -136,7 +140,12 @@ function errorAndExit({ code, message }) {
       } sts get-caller-identity`
     )
   } else {
-    console.error(message)
+    if (config.verbose) {
+      console.error({ name, code, message })
+      console.error(stack)
+    } else {
+      console.error(message)
+    }
   }
   process.exit(1)
 }
