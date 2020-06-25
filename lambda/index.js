@@ -67,6 +67,8 @@ async function actionUpload({ bucket = CMDA_BUCKET, key, dest }) {
   if (!key) throw new Error('key cannot be empty')
   if (!dest) throw new Error('dest cannot be empty')
 
+  await checkBucketAccess({ bucket })
+
   return pipePromise(
     s3.getObject({ Bucket: bucket, Key: key }).createReadStream(),
     tar.extract({
@@ -83,6 +85,8 @@ async function actionDownload({ bucket = CMDA_BUCKET, files }) {
   if (!bucket) throw new Error('bucket cannot be empty')
   if (!files || !files.length) throw new Error('files cannot be empty')
 
+  await checkBucketAccess({ bucket })
+
   const key = randomTgzName()
 
   const stream = strippedTarStream({ gzip: true }, files)
@@ -92,4 +96,17 @@ async function actionDownload({ bucket = CMDA_BUCKET, files }) {
   await upload.promise()
 
   return { bucket, key }
+}
+
+/**
+ * @param {{ bucket?: string }} options
+ */
+async function checkBucketAccess({ bucket = CMDA_BUCKET }) {
+  if (!bucket) throw new Error('bucket cannot be empty')
+  const s3 = new S3()
+  s3.config.maxRetries = 0
+  const httpOptions = s3.config.httpOptions || {}
+  httpOptions.timeout = 2000
+  httpOptions.connectTimeout = 2000
+  await s3.headBucket({ Bucket: bucket }).promise()
 }

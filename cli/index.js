@@ -139,6 +139,29 @@ function errorAndExit({ name, code, message, stack }) {
         process.env.AWS_PROFILE ? `--profile ${process.env.AWS_PROFILE}` : ''
       } sts get-caller-identity`
     )
+  } else if (name === 'TimeoutError') {
+    console.error(
+      'Timeout error trying to access S3. Your cmda Lambda function may be in a VPC that does not have access to S3.'
+    )
+    console.error()
+    console.error(
+      'You can enable access using the AWS CLI if you know your VPC id and route table ids:'
+    )
+    console.error()
+    console.error(
+      'aws ec2 create-vpc-endpoint --vpc-id vpc-1234 --route-table-ids rtb-1234 --service-name com.amazonaws.us-east-1.s3'
+    )
+    console.error()
+    console.error("If you don't know the route table ids to use for the above command, try:")
+    console.error()
+    console.error(
+      'aws ec2 describe-route-tables --filter Name=association.subnet-id,Values=subnet-1234,subnet-5678 --query "RouteTables[].RouteTableId"'
+    )
+    console.error()
+    console.error('See the AWS documentation for more information:')
+    console.error(
+      'https://docs.aws.amazon.com/vpc/latest/userguide/vpce-gateway.html#create-gateway-endpoint'
+    )
   } else {
     if (config.verbose) {
       console.error({ name, code, message })
