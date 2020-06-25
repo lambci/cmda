@@ -176,7 +176,7 @@ function prettySize(bytes) {
 }
 
 function clearLineLog(msg) {
-  if (process.stdout.isTTY) {
+  if (process.stdout.isTTY && !process.env.NO_COLOR) {
     process.stdout.write('\u001B[2K\u001B[G')
   }
   process.stdout.write(msg)
