@@ -1,6 +1,6 @@
 {
   "name": "cmda",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A command line tool for executing commands on, and copying files to/from AWS Lambda, especially useful with EFS",
   "author": "Michael Hart <michael.hart.au@gmail.com> (https://github.com/mhart)",
   "license": "MIT",
