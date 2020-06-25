@@ -51,10 +51,12 @@ exports.exec = async function ({ functionName, args }) {
   }
 }
 
+const MAX_RETRIES = 3
+
 /**
- * @param {{ functionName: string, args: string[], bucket?: string }} options
+ * @param {{ functionName: string, args: string[], bucket?: string, retries?: number }} options
  */
-exports.upload = async function ({ functionName, args: files, bucket }) {
+exports.upload = async function ({ functionName, args: files, bucket, retries = 0 }) {
   bucket = bucket || (await getBucketFromLambda(functionName))
 
   const dest = files.pop()
@@ -88,8 +90,16 @@ exports.upload = async function ({ functionName, args: files, bucket }) {
   } catch (e) {
     // XXX: need to figure out why this is happening
     if (e.message === 'zlib: unexpected end of file') {
+      if (retries >= MAX_RETRIES) {
+        throw new Error('Reached max number of retries, tarball was corrupted, please try again')
+      }
       clearLineLog('Corrupt tarball, trying again...')
-      return exports.upload({ functionName, args: files.concat(dest), bucket })
+      return exports.upload({
+        functionName,
+        args: files.concat(dest),
+        bucket,
+        retries: retries + 1,
+      })
     }
     throw e
   }
