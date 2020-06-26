@@ -109,13 +109,17 @@ Options:
 --profile <profile>  AWS profile to use (default: AWS_PROFILE env or 'default')
 --function <fn>      Lambda function name (default: CMDA_FUNCTION env or cmda_function from AWS CLI config)
 --bucket <bucket>    S3 bucket to use for transfers (optional, will determine from Lambda if not given)
+--verbose            More verbose output, especially for errors
 --help               Display this help message
 --version            Display command line version
 
 Commands:
 info                            Info about the cmda Lambda function and configured S3 bucket
 exec <cmd> <opts>               Execute <cmd> <options> remotely on Lambda, eg 'exec ls -la'
+cp|mv|rm|mkdir|ls|cat|touch|sh  Shortcuts for 'exec <cmd>'
 upload <file1, ...> <dest>      Upload local files to <dest> on the Lambda filesystem (shortcut: ul)
 download <file1, ...> <dest>    Download files from the Lambda filesystem to local <dest> (shortcut: dl)
-cp|mv|rm|mkdir|ls|cat|touch|sh  Shortcuts for 'exec <cmd>' above
+create-vpc-endpoint             Creates a VPC endpoint to give the cmda Lambda function access to S3
+
+Report bugs at github.com/lambci/cmda/issues
 ```
