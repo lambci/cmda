@@ -1,6 +1,7 @@
 const tar = require('tar')
 const S3 = require('aws-sdk/clients/s3')
 const Lambda = require('aws-sdk/clients/lambda')
+const EC2 = require('aws-sdk/clients/ec2')
 const { randomTgzName, strippedTarStream, pipePromise } = require('../shared/tar')
 const { version } = require('../package.json')
 
@@ -128,6 +129,87 @@ exports.download = async function ({ functionName, args: files, bucket: configBu
   await pipePromise(srcStream, destStream)
 
   clearLineLog('All files downloaded and unpacked\n')
+}
+
+/**
+ * @param {{ functionName: string, bucket?: string }} files
+ */
+exports.createVpcEndpoint = async function ({ functionName, bucket: configBucket }) {
+  const { bucket, vpcSubnetIds } = await invokeLambda(functionName, 'info')
+
+  configBucket = configBucket || bucket
+
+  if (!configBucket) {
+    throw new Error(
+      'Could not determine S3 bucket to use. Please specify --bucket or use the CMDA_BUCKET env '
+    )
+  }
+
+  const validSubnetIds = vpcSubnetIds
+    .split(',')
+    .map((id) => id.trim())
+    .filter(Boolean)
+
+  if (!validSubnetIds.length) {
+    throw new Error('The Lambda function does not appear to be attached to a VPC')
+  }
+
+  const ec2 = new EC2()
+
+  const { Subnets: subnets } = await ec2.describeSubnets({ SubnetIds: validSubnetIds }).promise()
+
+  const vpcIds = new Set(subnets.map(({ VpcId }) => VpcId))
+
+  const { RouteTables: routeTables } = await ec2
+    .describeRouteTables({ Filters: [{ Name: 'vpc-id', Values: [...vpcIds] }] })
+    .promise()
+
+  const vpcRouteTableIds = new Map()
+
+  for (const subnet of subnets) {
+    const subnetRouteTables = routeTables.filter(({ VpcId }) => VpcId === subnet.VpcId)
+    let routeTable = subnetRouteTables.find(({ Associations }) =>
+      Associations.some(({ SubnetId }) => SubnetId === subnet.SubnetId)
+    )
+    if (routeTable == null) {
+      routeTable = subnetRouteTables.find(({ Associations }) =>
+        Associations.some(({ Main }) => Main === true)
+      )
+    }
+    if (routeTable == null) {
+      console.error('Could not find route table for subnet ' + subnet.SubnetId)
+    }
+    let routeTableIds = vpcRouteTableIds.get(subnet.VpcId)
+    if (routeTableIds == null) {
+      routeTableIds = new Set()
+      vpcRouteTableIds.set(subnet.VpcId, routeTableIds)
+    }
+    routeTableIds.add(routeTable.RouteTableId)
+  }
+
+  for (const vpcId of vpcRouteTableIds.keys()) {
+    const { VpcEndpoint } = await ec2
+      .createVpcEndpoint({
+        VpcId: vpcId,
+        RouteTableIds: [...vpcRouteTableIds.get(vpcId)],
+        ServiceName: 'com.amazonaws.us-east-1.s3',
+        PolicyDocument: JSON.stringify({
+          Version: '2008-10-17',
+          Statement: {
+            Principal: '*',
+            Effect: 'Allow',
+            Action: 's3:*',
+            Resource: [`arn:aws:s3:::${configBucket}`, `arn:aws:s3:::${configBucket}/*`],
+          },
+        }),
+      })
+      .promise()
+    console.log('Successfully created VPC endpoint:')
+    console.log(VpcEndpoint)
+    console.log(
+      'It may take a minute for the permissions to propagate before you can use cmda successfully'
+    )
+  }
 }
 
 /**

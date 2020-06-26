@@ -81,6 +81,7 @@ Resources:
       Environment:
         Variables:
           CMDA_BUCKET: !Ref CmdaBucket
+          VPC_SUBNETS: !Join [',', !Ref VpcSubnetIds]
       VpcConfig:
         !If
           - AddVpcConfig

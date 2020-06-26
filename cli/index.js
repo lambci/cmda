@@ -3,11 +3,20 @@
 const minimist = require('minimist')
 const AWS = require('aws-sdk/global')
 const { cachedProviderChain, getProfileFromIniFiles } = require('./aws')
-const { info, exec, upload, download, clearLineLog } = require('./actions')
+const { info, exec, upload, download, createVpcEndpoint, clearLineLog } = require('./actions')
 const { version } = require('../package.json')
 
 const EXEC_SHORTCUTS = new Set(['cp', 'mv', 'rm', 'mkdir', 'ls', 'cat', 'touch', 'sh'])
-const ALL_CMDS = new Set(['info', 'exec', 'ul', 'upload', 'dl', 'download', ...EXEC_SHORTCUTS])
+const ALL_CMDS = new Set([
+  'info',
+  'exec',
+  'ul',
+  'upload',
+  'dl',
+  'download',
+  'create-vpc-endpoint',
+  ...EXEC_SHORTCUTS,
+])
 
 /** @type {{ action: string, functionName: string, args: string[], bucket?: string, verbose?: boolean }} */
 let config
@@ -29,6 +38,8 @@ async function run() {
     case 'dl':
     case 'download':
       return await download(config)
+    case 'create-vpc-endpoint':
+      return createVpcEndpoint(config)
     default:
       throw new Error(`Unknown action: ${config.action}`)
   }
@@ -51,9 +62,10 @@ Options:
 Commands:
 info                            Info about the cmda Lambda function and configured S3 bucket
 exec <cmd> <opts>               Execute <cmd> <options> remotely on Lambda, eg 'exec ls -la'
+cp|mv|rm|mkdir|ls|cat|touch|sh  Shortcuts for 'exec <cmd>'
 upload <file1, ...> <dest>      Upload local files to <dest> on the Lambda filesystem (shortcut: ul)
 download <file1, ...> <dest>    Download files from the Lambda filesystem to local <dest> (shortcut: dl)
-cp|mv|rm|mkdir|ls|cat|touch|sh  Shortcuts for 'exec <cmd>' above
+create-vpc-endpoint             Creates a VPC endpoint to give the cmda Lambda function access to S3
 
 Report bugs at github.com/lambci/cmda/issues
 `)
@@ -143,22 +155,11 @@ function errorAndExit({ name, code, message, stack }) {
     console.error(
       'Timeout error trying to access S3. Your cmda Lambda function may be in a VPC that does not have access to S3.'
     )
+    console.error('You can try to fix this by running:')
     console.error()
-    console.error(
-      'You can enable access using the AWS CLI if you know your VPC id and route table ids:'
-    )
+    console.error('cmda create-vpc-endpoint')
     console.error()
-    console.error(
-      'aws ec2 create-vpc-endpoint --vpc-id vpc-1234 --route-table-ids rtb-1234 --service-name com.amazonaws.us-east-1.s3'
-    )
-    console.error()
-    console.error("If you don't know the route table ids to use for the above command, try:")
-    console.error()
-    console.error(
-      'aws ec2 describe-route-tables --filter Name=association.subnet-id,Values=subnet-1234,subnet-5678 --query "RouteTables[].RouteTableId"'
-    )
-    console.error()
-    console.error('See the AWS documentation for more information:')
+    console.error('Otherwise, see the AWS documentation for more information:')
     console.error(
       'https://docs.aws.amazon.com/vpc/latest/userguide/vpce-gateway.html#create-gateway-endpoint'
     )

@@ -6,7 +6,7 @@ const S3 = require('aws-sdk/clients/s3')
 const { randomTgzName, strippedTarStream, pipePromise } = require('../shared/tar')
 const { version } = require('./package.json')
 
-const { CMDA_BUCKET } = process.env
+const { CMDA_BUCKET, VPC_SUBNETS } = process.env
 
 const s3 = new S3()
 ;(s3.config.httpOptions || {}).timeout = 15 * 60 * 1000
@@ -34,6 +34,7 @@ async function actionInfo() {
     functionVersion: version,
     functionName: process.env.AWS_LAMBDA_FUNCTION_NAME,
     bucket: CMDA_BUCKET,
+    vpcSubnetIds: VPC_SUBNETS,
   }
 }
 
