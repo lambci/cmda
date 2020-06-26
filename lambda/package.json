@@ -1,7 +1,7 @@
 {
   "name": "cmda-lambda",
   "private": true,
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "A Lambda function to support the cmda tool",
   "main": "index.js",
   "author": "Michael Hart <michael.hart.au@gmail.com> (https://github.com/mhart)",
