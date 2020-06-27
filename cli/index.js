@@ -164,7 +164,7 @@ function errorAndExit({ name, code, message, stack }) {
       'https://docs.aws.amazon.com/vpc/latest/userguide/vpce-gateway.html#create-gateway-endpoint'
     )
   } else {
-    if (config.verbose) {
+    if (config && config.verbose) {
       console.error({ name, code, message })
       console.error(stack)
     } else {
