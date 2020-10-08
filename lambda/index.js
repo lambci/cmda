@@ -8,8 +8,7 @@ const { version } = require('./package.json')
 
 const { CMDA_BUCKET, VPC_SUBNETS } = process.env
 
-const s3 = new S3()
-;(s3.config.httpOptions || {}).timeout = 15 * 60 * 1000
+const s3 = new S3({ httpOptions: { timeout: 15 * 60 * 1000 } })
 
 /**
  * @param {{ action: string, options: any }} event
@@ -104,10 +103,6 @@ async function actionDownload({ bucket = CMDA_BUCKET, files }) {
  */
 async function checkBucketAccess({ bucket = CMDA_BUCKET }) {
   if (!bucket) throw new Error('bucket cannot be empty')
-  const s3 = new S3()
-  s3.config.maxRetries = 0
-  const httpOptions = s3.config.httpOptions || {}
-  httpOptions.timeout = 2000
-  httpOptions.connectTimeout = 2000
+  const s3 = new S3({ maxRetries: 0, httpOptions: { timeout: 2000, connectTimeout: 2000 } })
   await s3.headBucket({ Bucket: bucket }).promise()
 }
