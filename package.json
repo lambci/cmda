@@ -17,7 +17,7 @@
     "build:cli": "webpack --config-name cli && chmod +x dist/index.js",
     "build:lambda": "webpack --config-name lambda",
     "deploy": "npm run build:lambda && sam deploy",
-    "package": "npm run build:lambda && sam package --output-template-file packaged.yml --s3-bucket $(grep s3_bucket samconfig.toml | cut -d= -f2 | tr -d '\" ')",
+    "package": "npm run build:lambda && sam package --output-template-file packaged.yml --s3-bucket $(grep s3_bucket samconfig.toml | head -1 | cut -d= -f2 | tr -d '\" ')",
     "publish-sar": "npm run package && sam publish -t packaged.yml"
   },
   "devDependencies": {
