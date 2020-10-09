@@ -33,11 +33,11 @@ Metadata:
 
 Parameters:
   VpcSubnetIds:
-    Type: List<AWS::EC2::Subnet::Id>
+    Type: String
     Description: VPC Subnet IDs (typically you only want private subnets)
     Default: ''
   VpcSecurityGroupIds:
-    Type: List<AWS::EC2::SecurityGroup::Id>
+    Type: String
     Description: VPC Security Group ID(s) (typically you only want one)
     Default: ''
   EfsAccessPointId:
@@ -54,19 +54,16 @@ Parameters:
     Default: ''
 
 Conditions:
-  AddVpcConfig:
-    !And
-      - !Not [!Equals ['', !Join ['', !Ref VpcSubnetIds]]]
-      - !Not [!Equals ['', !Join ['', !Ref VpcSecurityGroupIds]]]
-  AddEfsConfig:
-    !And
-      - !Not [!Equals ['', !Join ['', !Ref VpcSubnetIds]]]
-      - !Not [!Equals ['', !Join ['', !Ref VpcSecurityGroupIds]]]
-      - !Not [!Equals ['', !Ref EfsAccessPointId]]
-      - !Not [!Equals ['', !Ref EfsMountPath]]
+  AddVpcConfig: !And
+    - !Not [!Equals ['', !Ref VpcSubnetIds]]
+    - !Not [!Equals ['', !Ref VpcSecurityGroupIds]]
+  AddEfsConfig: !And
+    - !Not [!Equals ['', !Ref VpcSubnetIds]]
+    - !Not [!Equals ['', !Ref VpcSecurityGroupIds]]
+    - !Not [!Equals ['', !Ref EfsAccessPointId]]
+    - !Not [!Equals ['', !Ref EfsMountPath]]
 
 Resources:
-
   CmdaFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -81,20 +78,17 @@ Resources:
       Environment:
         Variables:
           CMDA_BUCKET: !Ref CmdaBucket
-          VPC_SUBNETS: !Join [',', !Ref VpcSubnetIds]
-      VpcConfig:
-        !If
-          - AddVpcConfig
-          - SubnetIds: !Ref VpcSubnetIds
-            SecurityGroupIds: !Ref VpcSecurityGroupIds
-          - !Ref AWS::NoValue
-      FileSystemConfigs:
-        !If
-          - AddEfsConfig
-          -
-            - Arn: !Sub 'arn:${AWS::Partition}:elasticfilesystem:${AWS::Region}:${AWS::AccountId}:access-point/${EfsAccessPointId}'
-              LocalMountPath: !Ref EfsMountPath
-          - !Ref AWS::NoValue
+          VPC_SUBNETS: !Ref VpcSubnetIds
+      VpcConfig: !If
+        - AddVpcConfig
+        - SubnetIds: !Split [',', !Ref VpcSubnetIds]
+          SecurityGroupIds: !Split [',', !Ref VpcSecurityGroupIds]
+        - !Ref AWS::NoValue
+      FileSystemConfigs: !If
+        - AddEfsConfig
+        - - Arn: !Sub 'arn:${AWS::Partition}:elasticfilesystem:${AWS::Region}:${AWS::AccountId}:access-point/${EfsAccessPointId}'
+            LocalMountPath: !Ref EfsMountPath
+        - !Ref AWS::NoValue
 
   CmdaBucket:
     Type: AWS::S3::Bucket
