@@ -10,8 +10,8 @@ Metadata:
     ReadmeUrl: README-SAR.md
     Labels: ['lambda', 'filesystem', 'efs']
     HomePageUrl: https://github.com/lambci/cmda
-    SemanticVersion: 1.1.1
-    SourceCodeUrl: https://github.com/lambci/cmda/tree/v1.1.1
+    SemanticVersion: 1.2.0
+    SourceCodeUrl: https://github.com/lambci/cmda/tree/v1.2.0
   AWS::CloudFormation::Interface:
     ParameterGroups:
       - Label:
