@@ -192,7 +192,7 @@ exports.createVpcEndpoint = async function ({ functionName, bucket: configBucket
       .createVpcEndpoint({
         VpcId: vpcId,
         RouteTableIds: [...vpcRouteTableIds.get(vpcId)],
-        ServiceName: 'com.amazonaws.us-east-1.s3',
+        ServiceName: `com.amazonaws.${ec2.config.region}.s3`,
         PolicyDocument: JSON.stringify({
           Version: '2008-10-17',
           Statement: {
